@@ -4,45 +4,36 @@ use std::ops::Deref;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
-#[derive(StructOpt, Clone, Debug)]
+#[derive(StructOpt, Debug)]
 pub struct HtmlParseOpts {
+    /// Parent of elements to be parsed
+    #[structopt(long, short = "P", help = "Parent of elements to be parsed")]
+    pub parent: Option<String>,
+    /// File paths to be parsed
+    #[structopt(parse(from_os_str), long, short, help = "File path locations of HTML documents")]
+    pub paths: Option<Vec<PathBuf>>,
+    /// HTML tags to be parsed from document
+    #[structopt(long, short, help = "HTML tags to be parsed from document")]
+    pub tags: Option<Vec<String>>,
+    /// Toggle rather or not to include tracing
     #[structopt(long, short = "T", help = "Toggles tracing")]
     pub trace: bool,
-    /// Filter based on parent's HTML tag
-    #[structopt(long, short = "t")]
-    pub tags: Option<Vec<String>>,
-    /// File paths to be parsed
-    #[structopt(parse(from_os_str), long, short)]
-    pub paths: Option<Vec<PathBuf>>,
     /// Urls to be parsed
-    #[structopt(long, short)]
+    #[structopt(long, short, help = "Urls to pull HTML from")]
     pub urls: Option<Vec<String>>,
 }
 
-#[derive(StructOpt, Clone, Debug)]
-pub enum HtmlOpts {
-    /// Parse **\<a/>** tags from HTML document
-    Links(HtmlParseOpts),
-}
-
-#[derive(StructOpt, Clone, Debug)]
+#[derive(StructOpt, Debug)]
 pub enum DocumentOpts {
     /// Parse an HTML document
-    Html(HtmlOpts),
+    Html(HtmlParseOpts),
 }
 
-#[derive(StructOpt, Clone, Debug)]
-pub enum CommandOpts {
-    /// Parses a specified document type
-    #[structopt(name = "probe")]
-    Parse(DocumentOpts),
-}
-
-#[derive(StructOpt, Clone, Debug)]
+#[derive(StructOpt, Debug)]
 pub struct Cli {
     /// System command options
     #[structopt(subcommand)]
-    cmd: Option<CommandOpts>,
+    cmd: Option<DocumentOpts>,
 }
 
 impl Cli {
@@ -53,15 +44,12 @@ impl Cli {
 
     /// Returns command issued by CLI
     pub fn command(&self) -> &DocumentOpts {
-        let cmd_opts = self.deref().borrow();
-        match cmd_opts {
-            CommandOpts::Parse(opts) => opts,
-        }
+        self.deref().borrow()
     }
 }
 
 impl Deref for Cli {
-    type Target = CommandOpts;
+    type Target = DocumentOpts;
 
     fn deref(&self) -> &Self::Target {
         self.cmd.as_ref().unwrap()
