@@ -6,15 +6,17 @@ use structopt::StructOpt;
 
 #[derive(StructOpt, Clone, Debug)]
 pub struct HtmlParseOpts {
+    #[structopt(long, short = "T", help = "Toggles tracing")]
+    pub trace: bool,
     /// Filter based on parent's HTML tag
-    #[structopt(long, short)]
+    #[structopt(long, short = "t")]
     pub tags: Option<Vec<String>>,
     /// File paths to be parsed
     #[structopt(parse(from_os_str), long, short)]
     pub paths: Option<Vec<PathBuf>>,
     /// Urls to be parsed
     #[structopt(long, short)]
-    pub urls: Option<Vec<String>>
+    pub urls: Option<Vec<String>>,
 }
 
 #[derive(StructOpt, Clone, Debug)]
@@ -32,7 +34,7 @@ pub enum DocumentOpts {
 #[derive(StructOpt, Clone, Debug)]
 pub enum CommandOpts {
     /// Parses a specified document type
-    #[structopt(name="probe")]
+    #[structopt(name = "probe")]
     Parse(DocumentOpts),
 }
 
@@ -44,14 +46,16 @@ pub struct Cli {
 }
 
 impl Cli {
+    /// Initializes CLI
     pub fn init() -> Self {
         Cli::from_args()
     }
 
+    /// Returns command issued by CLI
     pub fn command(&self) -> &DocumentOpts {
         let cmd_opts = self.deref().borrow();
         match cmd_opts {
-            CommandOpts::Parse(opts) => opts
+            CommandOpts::Parse(opts) => opts,
         }
     }
 }
