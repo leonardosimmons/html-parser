@@ -12,6 +12,9 @@ pub struct HtmlParseOpts {
     /// File paths to be parsed
     #[structopt(parse(from_os_str), long, short, help = "File path locations of HTML documents")]
     pub paths: Option<Vec<PathBuf>>,
+    /// HTML elements to be parsed based on CSS selector
+    #[structopt(long, short, help = "HTML elements to be parsed based on CSS selector")]
+    pub selector: Option<Vec<String>>,
     /// HTML tags to be parsed from document
     #[structopt(long, short, help = "HTML tags to be parsed from document")]
     pub tags: Option<Vec<String>>,
