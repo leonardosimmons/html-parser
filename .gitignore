@@ -8,5 +8,4 @@ Cargo.lock
 # Custom
 .idea/
 examples/
-tests/test.html
-tests/stackoverflow.html
+tests/*.html
