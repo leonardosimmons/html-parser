@@ -1,12 +1,14 @@
+use crate::parser::ParserError;
+
+use bytes::Bytes;
+use select::document::Document;
+use select::predicate::Predicate;
+
 use std::error;
 use std::fmt::{self, Display, Formatter};
 use std::io;
 use std::str::{self, FromStr, Utf8Error};
 use std::sync::{Arc, Mutex};
-
-use bytes::Bytes;
-use select::document::Document;
-use select::predicate::Predicate;
 
 // Traits --------------------------------------------------------------
 
@@ -17,10 +19,10 @@ pub trait HtmlDocument {
 }
 
 pub trait HtmlParser {
-    fn links<P: Predicate>(&self, p: P) -> Result<Vec<String>, String>;
+    fn links<P: Predicate>(&self, p: P) -> Result<Vec<String>, ParserError<HtmlError>>;
 }
 
-// Definitions -----------------------------------------------------------
+// Definitions --------------------------------------------------------
 
 #[derive(Debug)]
 pub enum HtmlAttribute {
@@ -29,12 +31,11 @@ pub enum HtmlAttribute {
 
 #[derive(Debug)]
 pub enum HtmlError {
-    ByteConversion { source: Utf8Error },
-    FailedToParse,
     Internal { source: io::Error },
     InvalidAttribute,
     InvalidTag,
     NotFound,
+    Utf8 { source: Utf8Error },
 }
 
 #[derive(Debug)]
@@ -89,12 +90,11 @@ impl Display for HtmlAttribute {
 impl Display for HtmlError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::ByteConversion { source } => write!(f, "{}", source),
-            Self::FailedToParse => write!(f, "failed to parse"),
             Self::Internal { source } => write!(f, "{}", source),
             Self::InvalidAttribute => write!(f, "invalid attribute"),
             Self::InvalidTag => write!(f, "invalid tag"),
             Self::NotFound => write!(f, "not found"),
+            Self::Utf8 { source } => write!(f, "{}", source),
         }
     }
 }
@@ -111,6 +111,7 @@ impl error::Error for HtmlError {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match self {
             Self::Internal { source } => Some(source),
+            Self::Utf8 { source } => Some(source),
             _ => None,
         }
     }
@@ -124,7 +125,7 @@ impl From<io::Error> for HtmlError {
 
 impl From<Utf8Error> for HtmlError {
     fn from(source: Utf8Error) -> Self {
-        Self::ByteConversion { source }
+        Self::Utf8 { source }
     }
 }
 

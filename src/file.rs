@@ -1,8 +1,9 @@
-use std::error;
-use std::error::Error;
+use std::error::{self, Error};
 use std::fmt::{self, Display, Formatter};
 use std::fs::File as SystemFile;
 use std::io::{self, BufReader, Read};
+
+// Definitions --------------------------------------------------------
 
 #[derive(Debug)]
 pub enum FileError {
@@ -13,11 +14,13 @@ pub struct File {
     content: String,
 }
 
+// File Impl ----------------------------------------------------------
+
 impl File {
     pub fn new(path: &str) -> Result<File, FileError> {
         match File::from(path, String::new()) {
             Ok(content) => Ok(File { content }),
-            Err(err) => Err(err.into()),
+            Err(err) => Err(err),
         }
     }
 
@@ -42,6 +45,8 @@ impl File {
         self.content
     }
 }
+
+// std Impl -----------------------------------------------------------
 
 impl Display for FileError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
