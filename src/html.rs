@@ -1,8 +1,8 @@
-use crate::parser::ParserError;
+use crate::file::File;
+use crate::parser::{Parser, ParserError};
 
 use bytes::Bytes;
 use select::document::Document;
-use select::predicate::Predicate;
 
 use std::error;
 use std::fmt::{self, Display, Formatter};
@@ -19,13 +19,14 @@ pub trait HtmlDocument {
 }
 
 pub trait HtmlParser {
-    fn links<P: Predicate>(&self, p: P) -> Result<Vec<String>, ParserError<HtmlError>>;
+    fn new(html: Html) -> Parser<Html>;
+    fn links(&self) -> Result<Vec<String>, ParserError<HtmlError>>;
 }
 
 // Definitions --------------------------------------------------------
 
 #[derive(Debug)]
-pub enum HtmlAttribute {
+pub(crate) enum HtmlAttribute {
     Href,
 }
 
@@ -39,7 +40,7 @@ pub enum HtmlError {
 }
 
 #[derive(Debug)]
-pub enum HtmlTag {
+pub(crate) enum HtmlTag {
     A,
 }
 
@@ -50,7 +51,7 @@ pub struct Html {
 // Html Impl ----------------------------------------------------------
 
 impl Html {
-    pub fn new(html: String) -> Self {
+    pub(crate) fn new(html: String) -> Self {
         Self {
             html: Arc::new(Mutex::new(Bytes::from(html))),
         }
@@ -107,6 +108,17 @@ impl Display for HtmlTag {
     }
 }
 
+impl Display for Html {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let bytes = &*self.bytes().to_vec();
+        if let Ok(content) = std::str::from_utf8(bytes) {
+            write!(f, "{}", content)
+        } else {
+            write!(f, "Unable to display Html")
+        }
+    }
+}
+
 impl error::Error for HtmlError {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match self {
@@ -126,6 +138,18 @@ impl From<io::Error> for HtmlError {
 impl From<Utf8Error> for HtmlError {
     fn from(source: Utf8Error) -> Self {
         Self::Utf8 { source }
+    }
+}
+
+impl From<File> for Html {
+    fn from(file: File) -> Self {
+        Html::new(file.content())
+    }
+}
+
+impl From<String> for Html {
+    fn from(s: String) -> Self {
+        Html::new(s)
     }
 }
 

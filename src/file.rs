@@ -18,14 +18,11 @@ pub struct File {
 
 impl File {
     pub fn new(path: &str) -> Result<File, FileError> {
-        match File::from(path, String::new()) {
-            Ok(content) => Ok(File { content }),
-            Err(err) => Err(err),
-        }
+        File::from(path, String::new()).and_then(|content| Ok(Ok(File { content })))?
     }
 
-    pub fn content(&self) -> &String {
-        &self.content
+    pub fn content(self) -> String {
+        self.content
     }
 
     fn from(path: &str, mut buf: String) -> Result<String, FileError> {
@@ -39,10 +36,6 @@ impl File {
             }
             Err(err) => Err(FileError::from(err)),
         }
-    }
-
-    pub fn get(self) -> String {
-        self.content
     }
 }
 
@@ -67,5 +60,11 @@ impl error::Error for FileError {
 impl From<io::Error> for FileError {
     fn from(source: io::Error) -> Self {
         Self::Internal { source }
+    }
+}
+
+impl From<String> for File {
+    fn from(s: String) -> Self {
+        File { content: s }
     }
 }
