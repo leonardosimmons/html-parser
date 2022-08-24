@@ -1,6 +1,6 @@
-use crate::html::{HtmlAttribute, HtmlDocument, HtmlError, HtmlParser};
+use crate::html::{Html, HtmlAttribute, HtmlDocument, HtmlError, HtmlParser, HtmlTag};
 
-use select::predicate::Predicate;
+use select::predicate::Name;
 
 use std::error;
 use std::fmt::{self, Display, Formatter};
@@ -23,9 +23,8 @@ pub struct Parser<T> {
 }
 
 // Parser Impl -----------------------------------------------------------
-
 impl<T> Parser<T> {
-    pub fn new(kind: T) -> Self {
+    pub fn new(kind: T) -> Parser<T> {
         Self { parse: kind }
     }
 }
@@ -47,10 +46,14 @@ impl<T> HtmlParser for Parser<T>
 where
     T: HtmlDocument,
 {
-    fn links<P: Predicate>(&self, predicate: P) -> Result<Vec<String>, ParserError<HtmlError>> {
+    fn new(html: Html) -> Parser<Html> {
+        Parser { parse: html }
+    }
+
+    fn links(&self) -> Result<Vec<String>, ParserError<HtmlError>> {
         match self.parse.document() {
             Ok(doc) => Ok(doc
-                .find(predicate)
+                .find(Name(HtmlTag::A.into()))
                 .filter_map(|n| {
                     if let Some(link) = n.attr(HtmlAttribute::Href.into()) {
                         Some(Parser::<Utils>::fix_link(link))
@@ -80,6 +83,12 @@ where
     }
 }
 
+impl<E> From<io::Error> for ParserError<E> {
+    fn from(source: io::Error) -> Self {
+        Self::Internal { source }
+    }
+}
+
 impl From<HtmlError> for ParserError<HtmlError> {
     fn from(error: HtmlError) -> Self {
         match error {
@@ -90,14 +99,14 @@ impl From<HtmlError> for ParserError<HtmlError> {
     }
 }
 
-impl<E> From<io::Error> for ParserError<E> {
-    fn from(source: io::Error) -> Self {
-        Self::Internal { source }
-    }
-}
-
 impl<E> From<Utf8Error> for ParserError<E> {
     fn from(source: Utf8Error) -> Self {
         Self::Utf8 { source }
+    }
+}
+
+impl From<Html> for Parser<Html> {
+    fn from(html: Html) -> Self {
+        Parser::new(html)
     }
 }
